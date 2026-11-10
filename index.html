@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SURCALA TV</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      background: #000;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Bricolage Grotesque', sans-serif;
+    }
+
+    body.playing {
+      cursor: none;
+    }
+
+    #waiting {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #0B2559 0%, #1B5FA8 60%, #0D3880 100%);
+      color: rgba(255, 255, 255, 0.7);
+      text-align: center;
+      padding: 20px;
+    }
+
+    .logo {
+      width: 490px;
+      max-width: 90vw;
+      height: auto;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+      mix-blend-mode: screen;
+      opacity: 0.95;
+      object-fit: contain;
+    }
+
+    .title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 12px;
+      letter-spacing: -0.04em;
+    }
+
+    .sub {
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 10px #4ade80;
+      animation: pulse 1.5s infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: .4
+      }
+
+      50% {
+        opacity: 1
+      }
+    }
+
+    #stage {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000;
+    }
+
+    #stage video,
+    #stage img,
+    #stage iframe {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      object-fit: contain;
+      background: #000;
+    }
+
+    #stage-msg {
+      display: none;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 80vw;
+      background: rgba(11, 37, 89, 0.92);
+      color: #fff;
+      padding: 24px 28px;
+      border-radius: 16px;
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      z-index: 5;
+    }
+
+    #badge-info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity .4s ease;
+      pointer-events: none;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    #badge-info.show {
+      opacity: 1;
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+    }
+
+    #hint.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="waiting">
+    <img src="logo.png" alt="Surcala Logo" class="logo" onerror="this.style.display='none'">
+    <div class="title">SURCALA TV</div>
+    <div class="sub">
+      <div class="dot"></div> <span id="status">Conectando...</span>
+    </div>
+  </div>
+
+  <div id="stage">
+    <video id="video" autoplay playsinline muted preload="auto"></video>
+    <img id="img" alt="">
+    <iframe id="frame" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    <div id="stage-msg"></div>
+  </div>
+
+  <div id="badge-info"></div>
+  <div id="hint"></div>
+
+  <script>
+    // ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
+    const GAS = 'https://script.google.com/macros/s/AKfycbxkIALoBj7KtQT7DT6eOq7Lg_C6cyZUGMQdsLOy1dKkcIKlu2UaFuzrUWB1UBcDbia_/exec';
+    const POLL_MS = 3000;
+
+    const $ = id => document.getElementById(id);
+    const waiting = $('waiting'),
+      stage = $('stage'),
+      video = $('video'),
+      img = $('img'),
+      frame = $('frame'),
+      stageMsg = $('stage-msg'),
+      badgeInfo = $('badge-info'),
+      statusEl = $('status');
+
+    let lastState = null;
+    let shownKey = null;
+    let shownItem = null;
+    let shownCmd = null;
+    let nextSent = false;
+    let soundOn = false;
+
+    // Temporizador de duración (para fotos o presentaciones)
+    let timer = null, timerLeft = 0, timerEnd = 0, timerRev = null;
+
+    // ─── COMUNICACIÓN CON GAS ────────────────────────────────────────────────────
+    async function getStatus() {
+      const r = await fetch(GAS + '?action=status&t=' + Date.now(), { cache: 'no-store' });
+      const s = await r.json();
+      if (!s.ok) throw new Error(s.error || 'Respuesta inválida');
+      return s;
+    }
+
+    async function post(body) {
+      const r = await fetch(GAS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(body)
+      });
+      const s = await r.json();
+      if (!s.ok) throw new Error(s.error || 'Error del servidor');
+      return s;
+    }
+
+    async function poll() {
+      try {
+        const s = await getStatus();
+        lastState = s;
+        render(s);
+      } catch (e) {
+        if (!shownKey) statusEl.textContent = 'Sin conexión... reintentando';
+      }
+      setTimeout(poll, POLL_MS);
+    }
+
+    // ─── RENDERIZADO DEL ESTADO ──────────────────────────────────────────────────
+    function render(s) {
+      const item = s.current;
+
+      // 1. Horario de programación
+      if (s.cmd !== 'stop' && s.schedule && s.schedule.enabled && !inSchedule(s.schedule)) {
+        return clearStage('Fuera del horario programado');
+      }
+
+      // 2. Estado STOP o sin elementos
+      if (s.cmd === 'stop' || !item) {
+        return clearStage((s.totalInQueue > 0) ? 'En espera...' : 'En espera · Playlist vacía');
+      }
+
+      // 3. Cambio de elemento en pantalla
+      const key = s.rev + '|' + item.uid;
+      if (key !== shownKey) showItem(item, s);
+
+      // 4. Sincronización de bucle
+      syncLoop(s);
+
+      // 5. Manejo de Pausa / Reanudar
+      if (s.cmd === 'pause') pauseItem();
+      else if (shownCmd === 'pause') resumeItem();
+      shownCmd = s.cmd;
+    }
+
+    function showItem(item, s) {
+      teardown();
+      shownKey = s.rev + '|' + item.uid;
+      shownItem = item;
+      shownCmd = null;
+      nextSent = false;
+
+      waiting.style.display = 'none';
+      stage.style.display = 'block';
+      document.body.classList.add('playing');
+
+      // Mostrar aviso de sección por 4 segundos
+      if (item.playlistName) {
+        badgeInfo.textContent = '📁 ' + item.playlistName + '  ·  ' + item.name;
+        badgeInfo.classList.add('show');
+        setTimeout(() => badgeInfo.classList.remove('show'), 4000);
+      }
+
+      if (item.type === 'video') {
+        video.style.display = 'block';
+        video.muted = !soundOn;
+        video.onended = () => requestNext(s.rev);
+        video.onerror = () => {
+          // Intento de fallback de URL si falla la principal
+          if (video.src.includes('drive.usercontent.google.com')) {
+            video.src = `https://drive.google.com/uc?export=download&id=${item.src}`;
+            video.play().catch(() => { });
+          } else {
+            mediaError(s.rev, `No se pudo reproducir "${item.name}".<br>Verificá que esté en formato .mp4 y compartido públicamente.`);
+          }
+        };
+        // Direct stream sin API Key
+        video.src = `https://drive.usercontent.google.com/download?id=${item.src}&export=download&authuser=0`;
+        video.play().catch(() => {
+          video.muted = true;
+          video.play().catch(() => { });
+        });
+
+      } else if (item.type === 'image') {
+        img.style.display = 'block';
+        img.onerror = () => mediaError(s.rev, `No se pudo cargar la imagen "${item.name}".`);
+        // Imagen directa de Google sin API Key
+        img.src = `https://lh3.googleusercontent.com/d/${item.src}`;
+
+      } else if (item.type === 'slides') {
+        frame.style.display = 'block';
+        const delay = Math.max(2, item.slideSec || 8) * 1000;
+        frame.src = `https://docs.google.com/presentation/d/${encodeURIComponent(item.src)}/embed?start=true&loop=true&delayms=${delay}&rm=minimal`;
+      }
+    }
+
+    function syncLoop(s) {
+      if (!shownItem) return;
+      const single = (s.totalInQueue || 1) <= 1;
+
+      if (shownItem.type === 'video') {
+        video.loop = single;
+      } else if (single) {
+        stopTimer();
+      } else if (timerRev === null) {
+        startTimer(shownItem.dur || 10, s.rev);
+      }
+    }
+
+    function pauseItem() {
+      if (shownItem && shownItem.type === 'video' && !video.paused) video.pause();
+      holdTimer();
+    }
+
+    function resumeItem() {
+      if (shownItem && shownItem.type === 'video') video.play().catch(() => { });
+      if (timerRev !== null && !timer) runTimer();
+    }
+
+    // ─── LIMPIEZA COMPLETA DE PANTALLA (TEARDOWN) ────────────────────────────────
+    function teardown() {
+      stopTimer();
+      video.onended = null;
+      video.onerror = null;
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      video.style.display = 'none';
+
+      img.onerror = null;
+      img.removeAttribute('src');
+      img.style.display = 'none';
+
+      frame.src = 'about:blank';
+      frame.style.display = 'none';
+
+      stageMsg.style.display = 'none';
+      badgeInfo.classList.remove('show');
+      shownKey = null;
+      shownItem = null;
+      shownCmd = null;
+    }
+
+    function clearStage(msg) {
+      statusEl.textContent = msg;
+      if (shownKey === null && stage.style.display !== 'block') return;
+      teardown();
+      stage.style.display = 'none';
+      waiting.style.display = 'flex';
+      document.body.classList.remove('playing');
+    }
+
+    function mediaError(rev, html) {
+      stageMsg.innerHTML = html;
+      stageMsg.style.display = 'block';
+      if (lastState && (lastState.totalInQueue || 0) > 1) {
+        startTimer(5, rev);
+      }
+    }
+
+    // ─── AVANCE CONTROLADO ───────────────────────────────────────────────────────
+    async function requestNext(rev) {
+      if (nextSent || !lastState || lastState.rev !== rev) return;
+      nextSent = true;
+      stopTimer();
+      try {
+        const s = await post({ action: 'next', rev });
+        lastState = s;
+        render(s);
+      } catch (e) {
+        nextSent = false;
+        setTimeout(() => requestNext(rev), 3000);
+      }
+    }
+
+    function startTimer(sec, rev) {
+      timerRev = rev;
+      timerLeft = sec * 1000;
+      runTimer();
+    }
+
+    function runTimer() {
+      clearTimeout(timer);
+      timerEnd = Date.now() + timerLeft;
+      const rev = timerRev;
+      timer = setTimeout(() => {
+        timer = null;
+        requestNext(rev);
+      }, timerLeft);
+    }
+
+    function holdTimer() {
+      if (!timer) return;
+      clearTimeout(timer);
+      timer = null;
+      timerLeft = Math.max(0, timerEnd - Date.now());
+    }
+
+    function stopTimer() {
+      clearTimeout(timer);
+      timer = null;
+      timerRev = null;
+      timerLeft = 0;
+    }
+
+    // ─── UTILIDADES ──────────────────────────────────────────────────────────────
+    function inSchedule(sch) {
+      const now = new Date();
+      const days = Array.isArray(sch.days) ? sch.days : [0, 1, 2, 3, 4];
+      const [sh, sm] = String(sch.start || '07:00').split(':').map(Number);
+      const [eh, em] = String(sch.end || '16:00').split(':').map(Number);
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      const startMin = sh * 60 + sm, endMin = eh * 60 + em;
+      const inTime = startMin <= endMin ? (nowMin >= startMin && nowMin <= endMin)
+        : (nowMin >= startMin || nowMin <= endMin);
+      const dayIdx = now.getDay() === 0 ? 6 : now.getDay() - 1;
+      return days.includes(dayIdx) && inTime;
+    }
+
+    let hintTimer;
+    function hint(msg) {
+      const el = $('hint');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(hintTimer);
+      hintTimer = setTimeout(() => el.classList.remove('show'), 2500);
+    }
+
+    // Evitar protector de pantalla en cajas ONN / Android TV
+    async function keepScreenAwake() {
+      try {
+        if ('wakeLock' in navigator) {
+          await navigator.wakeLock.request('screen');
+        }
+      } catch (e) { }
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') keepScreenAwake();
+    });
+
+    function toggleSoundAndFullscreen() {
+      soundOn = !soundOn;
+      video.muted = !soundOn;
+      hint(soundOn ? '🔊 Sonido activado' : '🔇 Sonido silenciado');
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => { });
+      }
+      keepScreenAwake();
+    }
+
+    // Click o botón OK del control remoto ONN: alternar sonido y pantalla completa
+    document.addEventListener('click', toggleSoundAndFullscreen);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') toggleSoundAndFullscreen();
+    });
+
+    // ─── INICIALIZACIÓN ──────────────────────────────────────────────────────────
+    keepScreenAwake();
+    poll();
+  </script>
+</body>
+
+</html>
+
