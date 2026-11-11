@@ -709,6 +709,7 @@
             <option value="">Sin playlists</option>
           </select>
           <button class="btn-sm" onclick="playCurrentPlaylist()" title="Reproducir esta playlist">▶ Reproducir</button>
+          <button class="btn-sm" onclick="sortCurrentPlaylist()" title="Ordenar elementos (1-9 o fecha de subida)">🔢 Ordenar</button>
           <button class="btn-sm btn-danger" onclick="clearCurrentPlaylist()"
             title="Vaciar elementos de esta playlist">🗑 Vaciar</button>
           <button class="btn-sm btn-danger" onclick="deleteCurrentPlaylist()" title="Eliminar esta playlist">✕</button>
@@ -978,6 +979,35 @@
 
     function playItemDirect(playlistId, uid) {
       run({ action: 'play', playlistId, uid }, '▶ Reproduciendo elemento');
+    }
+
+    function sortCurrentPlaylist() {
+      if (!viewedPlaylistId || !state || !state.playlists) return;
+      const pl = state.playlists.find(p => p.id === viewedPlaylistId);
+      if (!pl || !pl.items || !pl.items.length) {
+        toast('⚠️ Esta playlist no tiene elementos para ordenar');
+        return;
+      }
+      const sortedItems = pl.items.slice().sort((a, b) => {
+        const nameA = String((a && a.name) || '').trim();
+        const nameB = String((b && b.name) || '').trim();
+        const matchA = nameA.match(/^(\d+)/);
+        const matchB = nameB.match(/^(\d+)/);
+        if (matchA && matchB) {
+          const numA = parseInt(matchA[1], 10);
+          const numB = parseInt(matchB[1], 10);
+          if (numA !== numB) return numA - numB;
+          return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+        }
+        if (matchA && !matchB) return -1;
+        if (!matchA && matchB) return 1;
+        const timeA = Number((a && a.updated) || 0);
+        const timeB = Number((b && b.updated) || 0);
+        if (timeA !== timeB && timeA > 0 && timeB > 0) return timeA - timeB;
+        return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+      });
+      const newPlaylists = state.playlists.map(p => p.id === viewedPlaylistId ? Object.assign({}, p, { items: sortedItems }) : p);
+      run({ action: 'setPlaylists', playlists: newPlaylists }, '🔢 Playlist ordenada (1-9 o fecha de subida)');
     }
 
     // ─── GESTIÓN DE ELEMENTOS ────────────────────────────────────────────────────

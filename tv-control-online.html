@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SURCALA TV — Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg2: rgba(255, 255, 255, 0.12);
+      --bg3: rgba(255, 255, 255, 0.18);
+      --border: rgba(255, 255, 255, 0.22);
+      --accent: #fff;
+      --accent-text: #0B2559;
+      --green: #4ade80;
+      --red: #f87171;
+      --amber: #fbbf24;
+      --text: #ffffff;
+      --muted: rgba(255, 255, 255, 0.6);
+      --r: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0B2559 0%, #1B5FA8 60%, #0D3880 100%);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body.busy {
+      cursor: progress;
+    }
+
+    button:disabled {
+      opacity: .35;
+      cursor: default !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    header {
+      background: rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      background: var(--accent);
+      color: var(--accent-text);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    .hname {
+      font-size: 17px;
+      font-weight: 800;
+      margin-left: 14px;
+      letter-spacing: -0.02em;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    .status-dot.ok {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    .status-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-left: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    main {
+      padding: 24px 20px;
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(12px);
+      min-width: 0;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .now {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(0, 0, 0, 0.18);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .now-icon {
+      font-size: 32px;
+    }
+
+    .now-name {
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      word-break: break-word;
+    }
+
+    .now-sub {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-left: auto;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .badge.play {
+      background: rgba(74, 222, 128, 0.2);
+      color: var(--green);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .badge.pause {
+      background: rgba(251, 191, 36, 0.2);
+      color: var(--amber);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .badge.stop {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all .2s;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-play {
+      background: var(--green);
+      color: #000;
+    }
+
+    .btn-pause {
+      background: var(--amber);
+      color: #000;
+    }
+
+    .btn-stop {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .btn-next {
+      background: var(--bg3);
+      color: var(--text);
+    }
+
+    .mode-switch {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      align-items: center;
+    }
+
+    .mode-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-right: 6px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.15);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      text-align: center;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      color: var(--accent-text);
+      border-color: var(--accent);
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+    }
+
+    /* Selector y Gestión de Playlists */
+    .pl-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pl-select {
+      flex: 1;
+      min-width: 180px;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .pl-select option {
+      background: #0B2559;
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-sm:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-danger {
+      color: var(--red);
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+
+    .video-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 340px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .video-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .video-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 28px 10px;
+    }
+
+    .vi {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vi:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .vi.active {
+      border-color: var(--green);
+      background: rgba(74, 222, 128, 0.12);
+    }
+
+    .vi-ico {
+      font-size: 16px;
+      margin-right: 4px;
+    }
+
+    .vi-name {
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .vi-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+
+    .vi-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .vi-btn.del {
+      color: var(--red);
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .field input:focus {
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .help {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 10px;
+    }
+
+    .progress {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 10px;
+      min-height: 18px;
+      line-height: 1.4;
+      color: var(--green);
+    }
+
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: .2s;
+    }
+
+    .toggle input:checked+.slider {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .toggle input:checked+.slider::before {
+      transform: translateX(22px);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      background: rgba(0, 0, 0, 0.1);
+      padding: 12px 16px;
+      border-radius: 12px;
+    }
+
+    .toggle-label {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .days {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .day {
+      flex: 1;
+      height: 42px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.15);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .day.on {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-text);
+    }
+
+    .sched-box {
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+    }
+
+    .sched-box.in {
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--green);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .sched-box.out {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 999;
+      backdrop-filter: blur(8px);
+      max-width: 90vw;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .grid2 {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      main {
+        padding: 16px 12px;
+        gap: 16px;
+      }
+
+      .card {
+        padding: 20px 16px;
+        border-radius: 20px;
+      }
+
+      .now {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px 16px;
+        gap: 10px;
+      }
+
+      .badge {
+        margin-left: 0;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .btn {
+        padding: 16px;
+        font-size: 16px;
+      }
+
+      .video-list {
+        max-height: 45vh;
+      }
+
+      #toast {
+        right: 16px;
+        left: 16px;
+        bottom: 16px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div style="display:flex;align-items:center">
+      <span class="logo">TV</span>
+      <span class="hname">SURCALA TV — Panel</span>
+    </div>
+    <div style="display:flex;align-items:center">
+      <div class="status-dot" id="dot"></div>
+      <span class="status-label" id="status-label">Conectando...</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- 1. Reproducción Actual -->
+    <div class="card">
+      <div class="card-title">
+        <span>Reproducción actual</span>
+        <span id="queue-count" style="font-size:11px;font-weight:700;color:var(--muted)"></span>
+      </div>
+      <div class="now">
+        <div class="now-icon" id="now-icon">📺</div>
+        <div style="flex:1">
+          <div class="now-name" id="now-name">Sin reproducción</div>
+          <div class="now-sub" id="now-sub">Presioná Play o elegí un elemento</div>
+        </div>
+        <div class="badge stop" id="now-badge">DETENIDO</div>
+      </div>
+      <div class="controls">
+        <button class="btn btn-play" onclick="cmdPlay()">▶ Play</button>
+        <button class="btn btn-pause" onclick="cmdPause()">⏸ Pausa</button>
+        <button class="btn btn-stop" onclick="cmdStop()">⏹ Stop</button>
+        <button class="btn btn-next" onclick="cmdNext()">⏭ Siguiente</button>
+      </div>
+
+      <!-- Selector de Modo de Reproducción -->
+      <div class="mode-switch">
+        <span class="mode-label">Modo:</span>
+        <button class="mode-btn active" id="mode-single" onclick="setMode('single')">🔁 Repetir playlist actual</button>
+        <button class="mode-btn" id="mode-all" onclick="setMode('all')">🔀 Rotar todas las playlists</button>
+      </div>
+    </div>
+
+    <div class="grid2">
+
+      <!-- 2. Gestión de Playlists -->
+      <div class="card">
+        <div class="card-title">
+          <span>Playlists</span>
+          <span id="pl-total-items" style="font-weight:600;font-size:11px"></span>
+        </div>
+
+        <!-- Barra de selección de Playlist -->
+        <div class="pl-bar">
+          <select class="pl-select" id="pl-select" onchange="onSelectPlaylist(this.value)">
+            <option value="">Sin playlists</option>
+          </select>
+          <button class="btn-sm" onclick="playCurrentPlaylist()" title="Reproducir esta playlist">▶ Reproducir</button>
+          <button class="btn-sm" onclick="sortCurrentPlaylist()" title="Ordenar elementos (1-9 o fecha de subida)">🔢 Ordenar</button>
+          <button class="btn-sm btn-danger" onclick="clearCurrentPlaylist()"
+            title="Vaciar elementos de esta playlist">🗑 Vaciar</button>
+          <button class="btn-sm btn-danger" onclick="deleteCurrentPlaylist()" title="Eliminar esta playlist">✕</button>
+        </div>
+
+        <!-- Lista de elementos de la playlist seleccionada -->
+        <div class="video-list" id="video-list">
+          <div class="empty">Cargando playlists...</div>
+        </div>
+      </div>
+
+      <!-- 3. Sincronización y Configuración -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- Sincronizar desde Drive -->
+        <div class="card">
+          <div class="card-title">Sincronizar desde Drive</div>
+          <div class="field">
+            <label>Enlace de carpeta en Google Drive</label>
+            <input type="text" id="drive-folder"
+              value="https://drive.google.com/drive/folders/1B67HGasqnJBuDPjz8CoCT7JoTZF5S6ax"
+              placeholder="https://drive.google.com/drive/folders/...">
+          </div>
+          <button class="btn-sm" id="btn-sync"
+            style="width:100%;padding:14px;font-weight:800;background:var(--accent);color:var(--accent-text)"
+            onclick="syncDrive()">
+            🔄 Sincronizar secciones de Drive
+          </button>
+          <div class="progress" id="sync-progress"></div>
+          <div class="help">
+            <b>¿Cómo funciona?</b> Si la carpeta contiene subcarpetas (ej. cada sección), <b>cada subcarpeta se
+              convierte en una Playlist independiente</b> con sus videos, fotos y presentaciones.
+          </div>
+        </div>
+
+        <!-- Programación horaria -->
+        <div class="card">
+          <div class="card-title">Programación horaria</div>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="sched-on" onchange="saveSchedule()">
+              <span class="slider"></span>
+            </label>
+            <span class="toggle-label" id="sched-label">Desactivado</span>
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <label>Inicio</label>
+              <input type="time" id="sched-start" value="07:00" onchange="saveSchedule()">
+            </div>
+            <div class="field">
+              <label>Fin</label>
+              <input type="time" id="sched-end" value="16:00" onchange="saveSchedule()">
+            </div>
+          </div>
+
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:800;letter-spacing:.05em">DÍAS
+            ACTIVOS</div>
+          <div class="days">
+            <button class="day on" data-d="0">L</button>
+            <button class="day on" data-d="1">M</button>
+            <button class="day on" data-d="2">X</button>
+            <button class="day on" data-d="3">J</button>
+            <button class="day on" data-d="4">V</button>
+            <button class="day" data-d="5">S</button>
+            <button class="day" data-d="6">D</button>
+          </div>
+
+          <div class="sched-box out" id="sched-status">● Programación desactivada</div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    // ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
+    const GAS = 'https://script.google.com/macros/s/AKfycbxkIALoBj7KtQT7DT6eOq7Lg_C6cyZUGMQdsLOy1dKkcIKlu2UaFuzrUWB1UBcDbia_/exec';
+    const POLL_MS = 3000;
+
+    const ICON = { video: '🎬', image: '🖼️', slides: '📊' };
+    const LABEL = { video: 'Video', image: 'Imagen', slides: 'Presentación' };
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    let state = null;
+    let viewedPlaylistId = null; // ID de la playlist que se está viendo en pantalla
+    let busy = false;
+    let lastActionAt = 0;
+
+    // ─── COMUNICACIÓN ────────────────────────────────────────────────────────────
+    async function getStatus() {
+      const r = await fetch(GAS + '?action=status&t=' + Date.now(), { cache: 'no-store' });
+      const s = await r.json();
+      if (!s.ok) throw new Error(s.error || 'Respuesta inválida');
+      return s;
+    }
+
+    async function api(body) {
+      const r = await fetch(GAS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(body)
+      });
+      const s = await r.json();
+      if (!s.ok) throw new Error(s.error || 'Error del servidor');
+      return s;
+    }
+
+    async function run(body, okMsg) {
+      if (busy) { toast('⏳ Procesando acción anterior...'); return null; }
+      busy = true; document.body.classList.add('busy');
+      try {
+        const s = await api(body);
+        lastActionAt = Date.now();
+        applyState(s);
+        setOnline(true);
+        if (okMsg) toast(okMsg);
+        return s;
+      } catch (e) {
+        toast('❌ ' + e.message);
+        return null;
+      } finally {
+        busy = false; document.body.classList.remove('busy');
+      }
+    }
+
+    // ─── POLLING ─────────────────────────────────────────────────────────────────
+    async function poll() {
+      const t0 = Date.now();
+      try {
+        const s = await getStatus();
+        if (t0 >= lastActionAt && !busy) applyState(s);
+        setOnline(true);
+      } catch (e) {
+        setOnline(false);
+      }
+      setTimeout(poll, POLL_MS);
+    }
+
+    function setOnline(ok) {
+      $('dot').className = 'status-dot' + (ok ? ' ok' : '');
+      $('status-label').textContent = ok ? 'Conectado' : 'Sin conexión';
+    }
+
+    // ─── RENDER DE UI ────────────────────────────────────────────────────────────
+    function applyState(s) {
+      state = s;
+      const cur = s.current;
+
+      // Estado Actual
+      $('now-icon').textContent = cur ? ICON[cur.type] : '📺';
+      $('now-name').textContent = cur ? cur.name : 'Sin reproducción';
+      $('now-sub').textContent = cur
+        ? `${cur.playlistName ? '📁 ' + cur.playlistName + '  ·  ' : ''}${LABEL[cur.type]} (${s.index + 1} de ${s.totalInQueue})`
+        : 'Presioná Play o elegí un elemento';
+
+      const badge = $('now-badge');
+      badge.className = 'badge ' + s.cmd;
+      badge.textContent = s.cmd === 'play' ? 'EN VIVO' : s.cmd === 'pause' ? 'PAUSADO' : 'DETENIDO';
+
+      $('queue-count').textContent = s.totalInQueue ? `${s.totalInQueue} elementos en cola` : '';
+
+      // Modo de reproducción
+      $('mode-single').classList.toggle('active', s.playMode !== 'all');
+      $('mode-all').classList.toggle('active', s.playMode === 'all');
+
+      // Actualizar selector de Playlists
+      renderPlaylistSelector(s.playlists || [], s.activePlaylistId);
+
+      // Renderizar elementos de la playlist actualmente vista
+      renderViewedPlaylistItems();
+
+      // Programación
+      const sch = s.schedule || {};
+      $('sched-on').checked = !!sch.enabled;
+      $('sched-label').textContent = sch.enabled ? 'Activo' : 'Desactivado';
+      if (document.activeElement.id !== 'sched-start') $('sched-start').value = sch.start || '07:00';
+      if (document.activeElement.id !== 'sched-end') $('sched-end').value = sch.end || '16:00';
+      const days = Array.isArray(sch.days) ? sch.days : [0, 1, 2, 3, 4];
+      document.querySelectorAll('.day').forEach(b => b.classList.toggle('on', days.includes(+b.dataset.d)));
+      updateSchedStatus(sch);
+    }
+
+    function renderPlaylistSelector(playlists, activeId) {
+      const sel = $('pl-select');
+      if (!playlists.length) {
+        sel.innerHTML = '<option value="">(Sin playlists creadas)</option>';
+        viewedPlaylistId = null;
+        return;
+      }
+
+      if (!viewedPlaylistId || !playlists.some(p => p.id === viewedPlaylistId)) {
+        viewedPlaylistId = activeId || playlists[0].id;
+      }
+
+      const opts = playlists.map(p => {
+        const isAct = p.id === activeId ? ' [EN TV]' : '';
+        return `<option value="${p.id}" ${p.id === viewedPlaylistId ? 'selected' : ''}>📁 ${esc(p.name)} (${p.itemCount})${isAct}</option>`;
+      }).join('');
+
+      if (sel.innerHTML !== opts) sel.innerHTML = opts;
+    }
+
+    function onSelectPlaylist(id) {
+      viewedPlaylistId = id;
+      renderViewedPlaylistItems();
+    }
+
+    function renderViewedPlaylistItems() {
+      const el = $('video-list');
+      if (!state || !state.playlists || !state.playlists.length) {
+        el.innerHTML = '<div class="empty">No hay playlists sincronizadas.<br>Hacé click en <b>Sincronizar secciones de Drive</b>.</div>';
+        return;
+      }
+
+      const pl = state.playlists.find(p => p.id === viewedPlaylistId) || state.playlists[0];
+      if (!pl || !pl.items || !pl.items.length) {
+        el.innerHTML = '<div class="empty">Esta playlist no tiene elementos compatibles.</div>';
+        return;
+      }
+
+      const curUid = state.current ? state.current.uid : null;
+
+      el.innerHTML = pl.items.map((it, i) => `
+    <div class="vi ${it.uid === curUid ? 'active' : ''}" data-uid="${it.uid}">
+      <span class="vi-ico">${ICON[it.type] || '❔'}</span>
+      <span class="vi-name" onclick="playItemDirect('${pl.id}', '${it.uid}')" title="Reproducir este elemento">${esc(it.name)}</span>
+      ${it.type !== 'video' ? `<button class="vi-btn" onclick="editDuration('${pl.id}', ${i})" title="Cambiar duración">${it.dur}s</button>` : ''}
+      <button class="vi-btn" onclick="moveItem('${pl.id}', ${i}, -1)" ${i === 0 ? 'disabled' : ''} title="Subir">↑</button>
+      <button class="vi-btn" onclick="moveItem('${pl.id}', ${i}, 1)" ${i === pl.items.length - 1 ? 'disabled' : ''} title="Bajar">↓</button>
+      <button class="vi-btn del" onclick="deleteItem('${pl.id}', ${i})" title="Quitar elemento">✕</button>
+    </div>
+  `).join('');
+    }
+
+    // ─── ACCIONES DE REPRODUCCIÓN ────────────────────────────────────────────────
+    async function cmdPlay() {
+      run({ action: 'play' }, '▶ Play');
+    }
+
+    function cmdPause() {
+      run({ action: 'pause' }, '⏸ Pausado');
+    }
+
+    function cmdStop() {
+      run({ action: 'stop' }, '⏹ Detenido');
+    }
+
+    function cmdNext() {
+      run({ action: 'next' }, '⏭ Siguiente');
+    }
+
+    function setMode(mode) {
+      run({ action: 'setPlayMode', mode }, mode === 'all' ? '🔀 Modo: Rotar todas las playlists' : '🔁 Modo: Playlist seleccionada');
+    }
+
+    function playCurrentPlaylist() {
+      if (!viewedPlaylistId) return;
+      run({ action: 'play', playlistId: viewedPlaylistId }, '▶ Reproduciendo sección seleccionada');
+    }
+
+    function playItemDirect(playlistId, uid) {
+      run({ action: 'play', playlistId, uid }, '▶ Reproduciendo elemento');
+    }
+
+    function sortCurrentPlaylist() {
+      if (!viewedPlaylistId || !state || !state.playlists) return;
+      const pl = state.playlists.find(p => p.id === viewedPlaylistId);
+      if (!pl || !pl.items || !pl.items.length) {
+        toast('⚠️ Esta playlist no tiene elementos para ordenar');
+        return;
+      }
+      const sortedItems = pl.items.slice().sort((a, b) => {
+        const nameA = String((a && a.name) || '').trim();
+        const nameB = String((b && b.name) || '').trim();
+        const matchA = nameA.match(/^(\d+)/);
+        const matchB = nameB.match(/^(\d+)/);
+        if (matchA && matchB) {
+          const numA = parseInt(matchA[1], 10);
+          const numB = parseInt(matchB[1], 10);
+          if (numA !== numB) return numA - numB;
+          return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+        }
+        if (matchA && !matchB) return -1;
+        if (!matchA && matchB) return 1;
+        const timeA = Number((a && a.updated) || 0);
+        const timeB = Number((b && b.updated) || 0);
+        if (timeA !== timeB && timeA > 0 && timeB > 0) return timeA - timeB;
+        return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+      });
+      const newPlaylists = state.playlists.map(p => p.id === viewedPlaylistId ? Object.assign({}, p, { items: sortedItems }) : p);
+      run({ action: 'setPlaylists', playlists: newPlaylists }, '🔢 Playlist ordenada (1-9 o fecha de subida)');
+    }
+
+    // ─── GESTIÓN DE ELEMENTOS ────────────────────────────────────────────────────
+    function clearCurrentPlaylist() {
+      if (!viewedPlaylistId) return;
+      if (!confirm('¿Vaciar todos los videos e imágenes de esta playlist?')) return;
+      run({ action: 'clearPlaylist', playlistId: viewedPlaylistId }, '🗑 Playlist vaciada');
+    }
+
+    function deleteCurrentPlaylist() {
+      if (!viewedPlaylistId) return;
+      if (!confirm('¿Eliminar por completo esta playlist?')) return;
+      run({ action: 'deletePlaylist', playlistId: viewedPlaylistId }, '❌ Playlist eliminada');
+    }
+
+    function moveItem(playlistId, idx, dir) {
+      const pl = state.playlists.find(p => p.id === playlistId);
+      if (!pl) return;
+      const targetIdx = idx + dir;
+      if (targetIdx < 0 || targetIdx >= pl.items.length) return;
+
+      const newItems = pl.items.slice();
+      const temp = newItems[idx];
+      newItems[idx] = newItems[targetIdx];
+      newItems[targetIdx] = temp;
+
+      const newPlaylists = state.playlists.map(p => p.id === playlistId ? Object.assign({}, p, { items: newItems }) : p);
+      run({ action: 'setPlaylists', playlists: newPlaylists });
+    }
+
+    function deleteItem(playlistId, idx) {
+      const pl = state.playlists.find(p => p.id === playlistId);
+      if (!pl) return;
+      const newItems = pl.items.filter((_, i) => i !== idx);
+      const newPlaylists = state.playlists.map(p => p.id === playlistId ? Object.assign({}, p, { items: newItems }) : p);
+      run({ action: 'setPlaylists', playlists: newPlaylists }, 'Elemento quitado');
+    }
+
+    function editDuration(playlistId, idx) {
+      const pl = state.playlists.find(p => p.id === playlistId);
+      if (!pl) return;
+      const it = pl.items[idx];
+      const val = prompt(`Segundos en pantalla para "${it.name}":`, it.dur || 10);
+      if (val === null) return;
+      const num = Math.round(Number(val));
+      if (!isFinite(num) || num < 3) { toast('⚠️ El mínimo son 3 segundos'); return; }
+
+      const newItems = pl.items.slice();
+      newItems[idx] = Object.assign({}, it, { dur: num });
+      const newPlaylists = state.playlists.map(p => p.id === playlistId ? Object.assign({}, p, { items: newItems }) : p);
+      run({ action: 'setPlaylists', playlists: newPlaylists }, '⏱ Duración actualizada');
+    }
+
+    // ─── SINCRONIZACIÓN NATIVA CON GOOGLE DRIVE ──────────────────────────────────
+    async function syncDrive() {
+      const url = $('drive-folder').value.trim();
+      if (!url) { toast('⚠️ Pegá el enlace de la carpeta de Drive'); return; }
+
+      const btn = $('btn-sync');
+      const prog = $('sync-progress');
+      btn.disabled = true;
+      prog.textContent = '⏳ Leyendo subcarpetas de Drive... (Puede tardar unos segundos)';
+
+      try {
+        const s = await run({ action: 'syncDriveFolder', folderId: url }, '✅ Sincronización completa');
+        if (s && s.playlists) {
+          prog.textContent = `✅ Listo: ${s.playlists.length} playlists sincronizadas`;
+        } else {
+          prog.textContent = '';
+        }
+      } catch (e) {
+        prog.textContent = '❌ Error: ' + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ─── PROGRAMACIÓN HORARIA ────────────────────────────────────────────────────
+    function saveSchedule() {
+      const days = Array.from(document.querySelectorAll('.day.on')).map(b => +b.dataset.d);
+      run({
+        action: 'schedule',
+        enabled: $('sched-on').checked,
+        start: $('sched-start').value,
+        end: $('sched-end').value,
+        days
+      }, '📅 Programación guardada');
+    }
+
+    function updateSchedStatus(sch) {
+      const box = $('sched-status');
+      if (!sch.enabled) {
+        box.className = 'sched-box out';
+        box.textContent = '● Programación desactivada';
+        return;
+      }
+      const now = new Date();
+      const days = Array.isArray(sch.days) ? sch.days : [0, 1, 2, 3, 4];
+      const [sh, sm] = String(sch.start || '07:00').split(':').map(Number);
+      const [eh, em] = String(sch.end || '16:00').split(':').map(Number);
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      const startMin = sh * 60 + sm, endMin = eh * 60 + em;
+      const inTime = startMin <= endMin ? (nowMin >= startMin && nowMin <= endMin)
+        : (nowMin >= startMin || nowMin <= endMin);
+      const inDay = days.includes(now.getDay() === 0 ? 6 : now.getDay() - 1);
+
+      if (inTime && inDay) {
+        box.className = 'sched-box in';
+        box.textContent = '● Dentro del horario programado';
+      } else {
+        box.className = 'sched-box out';
+        box.textContent = '● Fuera de horario (TV en espera)';
+      }
+    }
+
+    document.querySelectorAll('.day').forEach(btn => btn.addEventListener('click', () => {
+      btn.classList.toggle('on');
+      saveSchedule();
+    }));
+
+    // ─── TOAST ───────────────────────────────────────────────────────────────────
+    let toastTimer;
+    function toast(msg) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    // ─── INICIO ──────────────────────────────────────────────────────────────────
+    poll();
+  </script>
+</body>
+
+</html>
